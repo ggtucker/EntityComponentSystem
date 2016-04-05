@@ -2,9 +2,11 @@
 
 class Entity {
 public:
-	int id;
+	std::size_t id;
 
-	Entity(int id) : id{ id } {}
+	Entity() : id{ 0 } {}
+
+	explicit Entity(std::size_t id) : id{ id } {}
 
 	bool operator==(const Entity& other) const {
 		return id == other.id;
@@ -34,8 +36,8 @@ public:
 namespace std {
 	template <>
 	struct hash<Entity> {
-		std::size_t operator()(const Entity& k) const {
-			return std::hash<int>()(k.id);
+		size_t operator()(const Entity& k) const {
+			return hash<size_t>()(k.id);
 		}
 	};
 }

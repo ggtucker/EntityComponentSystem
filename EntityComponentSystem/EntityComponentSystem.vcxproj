@@ -147,12 +147,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Component.h" />
-    <ClInclude Include="ComponentManager.h" />
+    <ClInclude Include="ECSSettings.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntitySystem.h" />
     <ClInclude Include="PositionComponent.h" />
+    <ClInclude Include="Reflection.h" />
     <ClInclude Include="RenderableComponent.h" />
-    <ClInclude Include="TMemoryPool.h" />
+    <ClInclude Include="TIndexMemoryPool.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />

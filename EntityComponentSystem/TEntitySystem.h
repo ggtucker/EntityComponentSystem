@@ -14,11 +14,11 @@ using EntityIndex = std::size_t;
 using ComponentIndex = std::size_t;
 
 template <typename TSettings>
-struct EntityData {
+struct TEntityData {
 	using Settings = TSettings;
 	using Bitset = typename Settings::Bitset;
 
-	EntityData() {}
+	TEntityData() {}
 
 	bool alive;
 	Entity id;
@@ -26,11 +26,11 @@ struct EntityData {
 };
 
 template <typename TSettings>
-class EntitySystem {
+class TEntitySystem {
 private:
 	using Settings = TSettings;
-	using ThisType = EntitySystem<Settings>;
-	using EntityData = EntityData<Settings>;
+	using ThisType = TEntitySystem<Settings>;
+	using EntityData = TEntityData<Settings>;
 
 	using ComponentList = typename Settings::ComponentList;
 	using ComponentPoolTuple = typename ComponentList::template WrapTypes<ComponentPool>::ListTuple;
@@ -97,7 +97,7 @@ private:
 
 public:
 
-	EntitySystem() { growEntityCapacity(100); }
+	TEntitySystem() { growEntityCapacity(100); }
 
 	Entity CreateEntity() {
 		static std::size_t idCounter = 1;

@@ -1,0 +1,15 @@
+{
+	"entities": {
+		"cow": {
+			"healthComponent": {
+				"health": 40,
+				"maxHealth": 50
+			},
+			"positionComponent": {
+				"x": 5,
+				"y": 10,
+				"z": 15
+			}
+		}
+	}
+}

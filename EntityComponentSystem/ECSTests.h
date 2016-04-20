@@ -4,7 +4,6 @@
 #include <iostream>
 #include "Reflection.h"
 #include "ECSSettings.h"
-#include "PositionComponent.h"
 #include "TEntitySystem.h"
 
 namespace Tests {

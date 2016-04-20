@@ -27,8 +27,9 @@ struct TEntityData {
 
 template <typename TSettings>
 class TEntitySystem {
-private:
+public:
 	using Settings = TSettings;
+private:
 	using ThisType = TEntitySystem<Settings>;
 	using EntityData = TEntityData<Settings>;
 

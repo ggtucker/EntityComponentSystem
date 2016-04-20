@@ -150,8 +150,11 @@
     <ClInclude Include="ECSSettings.h" />
     <ClInclude Include="ECSTests.h" />
     <ClInclude Include="Entity.h" />
+    <ClInclude Include="EntityParser.h" />
+    <ClInclude Include="json\json-forwards.h" />
+    <ClInclude Include="json\json.h" />
+    <ClInclude Include="TEntityPrototype.h" />
     <ClInclude Include="TEntitySystem.h" />
-    <ClInclude Include="PositionComponent.h" />
     <ClInclude Include="Reflection.h" />
     <ClInclude Include="RenderableComponent.h" />
     <ClInclude Include="PrintSystem.h" />
@@ -159,6 +162,7 @@
     <ClInclude Include="Typedefs.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="jsoncpp.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

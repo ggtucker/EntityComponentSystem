@@ -193,7 +193,7 @@ public:
 	}
 
 	template <typename ComponentType>
-	void AddComponent(Entity e, const ComponentType& component) {
+	void AddComponent(Entity e, const ComponentType& component) noexcept {
 		static_assert(Settings::template IsComponent<ComponentType>(), "");
 
 		ComponentIndexTable& table = getComponentIndexTable<ComponentType>();
@@ -204,26 +204,25 @@ public:
 	}
 
 	template <typename ComponentType>
-	ComponentType* GetComponent(Entity e) {
+	ComponentType& GetComponent(Entity e) noexcept {
 		static_assert(Settings::template IsComponent<ComponentType>(), "");
+		assert(HasComponent<ComponentType>(e));
 
 		ComponentPool<ComponentType>& pool = getComponentPool<ComponentType>();
 
 		ComponentIndex index;
-		if (getComponentIndex<ComponentType>(e, index)) {
-			return &pool[index];
-		}
-		return nullptr;
+		getComponentIndex<ComponentType>(e, index);
+		return pool[index];
 	}
 
-	void RemoveAllComponents(Entity e) {
+	void RemoveAllComponents(Entity e) noexcept {
 		ComponentList::ForTypes([this, &e](auto t) {
 			RemoveComponent<TYPE_OF(t)>(e);
 		});
 	}
 
 	template <typename ComponentType>
-	bool RemoveComponent(Entity e) {
+	bool RemoveComponent(Entity e) noexcept {
 		static_assert(Settings::template IsComponent<ComponentType>(), "");
 
 		ComponentIndexTable& table = getComponentIndexTable<ComponentType>();
@@ -283,9 +282,9 @@ public:
 
 			EntityData& dead = getEntityData(deadIdx);
 			EntityData& alive = getEntityData(aliveIdx);
-			std::swap(dead, alive);
 
 			m_entityIndexTable[alive.id] = deadIdx;
+			std::swap(dead, alive);
 
 			++deadIdx; --aliveIdx;
 		}
@@ -341,7 +340,7 @@ private:
 		template <typename TFunc>
 		static void call(ThisType& entitySystem, EntityIndex index, TFunc&& func) {
 			Entity entity = entitySystem.getEntityData(index).id;
-			func(index, *entitySystem.GetComponent<Ts>(entity)...);
+			func(index, entitySystem.GetComponent<Ts>(entity)...);
 		}
 	};
 

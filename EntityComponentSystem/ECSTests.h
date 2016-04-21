@@ -127,24 +127,18 @@ namespace ECSTests {
 		p0.y = 32;
 		p0.z = 50;
 
-		PositionComponent* p1 = entitySystem.GetComponent<PositionComponent>(e);
-		assert(p1 == nullptr);
-
 		entitySystem.AddComponent(e, p0);
 
-		PositionComponent* p2 = entitySystem.GetComponent<PositionComponent>(e);
-		assert(p2->x == 12 && p2->y == 32 && p2->z == 50);
+		PositionComponent& p1 = entitySystem.GetComponent<PositionComponent>(e);
+		assert(p1.x == 12 && p1.y == 32 && p1.z == 50);
 
-		p2->y = 101;
+		p1.y = 101;
 
-		PositionComponent* p3 = entitySystem.GetComponent<PositionComponent>(e);
-		assert(p3->x == 12 && p3->y == 101 && p3->z == 50);
+		PositionComponent& p2 = entitySystem.GetComponent<PositionComponent>(e);
+		assert(p2.x == 12 && p2.y == 101 && p2.z == 50);
 
 		bool removed = entitySystem.RemoveComponent<PositionComponent>(e);
 		assert(removed);
-
-		PositionComponent* p4 = entitySystem.GetComponent<PositionComponent>(e);
-		assert(p4 == nullptr);
 
 		std::cout << "Component insertion, modification, and deletion tests passed!" << std::endl;
 
@@ -160,11 +154,10 @@ namespace ECSTests {
 		entitySystem.Kill(e2);
 		entitySystem.Refresh();
 
-		PositionComponent* p5 = entitySystem.GetComponent<PositionComponent>(e2);
-		assert(p5 == nullptr);
+		assert(entitySystem.IsHandleValid(e2) == false);
 
-		PositionComponent* p6 = entitySystem.GetComponent<PositionComponent>(e4);
-		assert(p6->x == 12 && p6->y == 32 && p6->z == 50);
+		PositionComponent& p4 = entitySystem.GetComponent<PositionComponent>(e4);
+		assert(p4.x == 12 && p4.y == 32 && p4.z == 50);
 
 		std::cout << "Entity removal tests passed!" << std::endl;
 

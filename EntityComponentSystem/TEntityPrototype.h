@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-#include <typeinfo>
 #include <typeindex>
 #include <type_traits>
 #include <memory>
@@ -14,9 +13,12 @@ private:
 	using Settings = TSettings;
 	using ComponentList = typename Settings::ComponentList;
 
+	std::string m_name;
 	std::unordered_map<std::type_index, std::shared_ptr<Component>> m_components;
 
 public:
+
+	TEntityPrototype(const std::string& name) : m_name{ name } {}
 
 	Entity CreateEntity(TEntitySystem<Settings>& entitySystem) {
 		Entity e = entitySystem.CreateEntity();
@@ -28,26 +30,27 @@ public:
 		return e;
 	}
 
+	const std::string& GetName() const {
+		return m_name;
+	}
+
 	template <typename CType>
 	void Add(CType obj) {
-		static_assert(!std::is_same<CType, Component>::value, "CType must be specific component type");
-		static_assert(std::is_base_of<Component, CType>::value, "CType must be derived from Component");
+		static_assert(Settings::template IsComponent<CType>(), "");
 
 		m_components[std::type_index(typeid(CType))] = std::shared_ptr<CType>(new CType(obj));
 	}
 
 	template <typename CType>
 	void Remove() {
-		static_assert(!std::is_same<CType, Component>::value, "CType must be specific component type");
-		static_assert(std::is_base_of<Component, CType>::value, "CType must be derived from Component");
+		static_assert(Settings::template IsComponent<CType>(), "");
 
 		m_components.erase(std::type_index(typeid(CType)));
 	}
 
 	template <typename CType>
-	CType Get() {
-		static_assert(!std::is_same<CType, Component>::value, "CType must be specific component type");
-		static_assert(std::is_base_of<Component, CType>::value, "CType must be derived from Component");
+	CType Get() const {
+		static_assert(Settings::template IsComponent<CType>(), "");
 
 		auto componentIter = m_components.find(std::type_index(typeid(CType)));
 		if (componentIter != m_components.end()) {
@@ -57,9 +60,8 @@ public:
 	}
 
 	template <typename CType>
-	bool Contains() {
-		static_assert(!std::is_same<CType, Component>::value, "CType must be specific component type");
-		static_assert(std::is_base_of<Component, CType>::value, "CType must be derived from Component");
+	bool Contains() const {
+		static_assert(Settings::template IsComponent<CType>(), "");
 
 		auto componentIter = m_components.find(std::type_index(typeid(CType)));
 		return componentIter != m_components.end();

@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include "Reflection.h"
+#include "Component.h"
 
 namespace Sig {
 	template<typename TSettings>
@@ -39,7 +40,9 @@ struct ECSSettings {
 
 	template <typename T>
 	static constexpr bool IsComponent() noexcept {
-		return ComponentList::Contains<T>();
+		return ComponentList::Contains<T>()
+			&& std::is_base_of<Component, T>::value
+			&& !std::is_same<Component, T>::value;
 	}
 
 	template <typename T>

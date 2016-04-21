@@ -1,47 +1,41 @@
 #pragma once
 
-#include "Typedefs.h"
 #include "json/json.h"
-#include <fstream>
 #include <iostream>
+#include <typeindex>
+#include "TEntityPrototype.h"
 #include "Component.h"
 
 namespace EntityParser {
 
-	static bool contains_field(std::vector<std::string>& entityFields, std::string&& field) {
-		return std::find(entityFields.begin(), entityFields.end(), field) != entityFields.end();
-	}
+	template <typename TSettings>
+	static TEntityPrototype<TSettings> CreatePrototype(const std::string& name, Json::Value root) {
+		TEntityPrototype<TSettings> proto(name);
 
-	static EntityPrototype CreatePrototype(Json::Value root) {
-		EntityPrototype proto;
 		std::vector<std::string> components = root.getMemberNames();
-		for (std::size_t i = 0; i < components.size(); ++i) {
-			std::cout << components[i] << std::endl;
-			Json::Value componentRoot = root.get(components[i], "");
-			if (components[i] == "healthComponent") {
-				HealthComponent component;
-				component.health = componentRoot.get("health", "-1").asFloat();
-				component.maxHealth = componentRoot.get("maxHealth", "-1").asFloat();
-				proto.Add(component);
-			} else if(components[i] == "positionComponent") {
-				PositionComponent component;
-				component.x = componentRoot.get("x", "-1").asFloat();
-				component.y = componentRoot.get("y", "-1").asFloat();
-				component.z = componentRoot.get("z", "-1").asFloat();
+
+		using ComponentList = typename TSettings::ComponentList;
+		ComponentList::ForTypes([&proto, &root, &components](auto t) {
+			TYPE_OF(t) component;
+			std::string componentName = component.Name();
+			auto foundIter = std::find(components.begin(), components.end(), componentName);
+			if (foundIter != components.end()) {
+				component.Deserialize(root.get(componentName, ""));
 				proto.Add(component);
 			}
-		}
+		});
+
 		return proto;
 	}
 
-	static std::vector<EntityPrototype> ParseTypes() {
+	template <typename TSettings>
+	static std::vector<TEntityPrototype<TSettings>> ParseTypes(std::istream& inputStream) {
 
-		std::vector<EntityPrototype> prototypes;
+		std::vector<TEntityPrototype<TSettings>> prototypes;
 
 		Json::Value root;
 		Json::Reader reader;
-		std::ifstream test("entity_data.txt", std::ifstream::binary);
-		bool success = reader.parse(test, root, false);
+		bool success = reader.parse(inputStream, root, false);
 		if (!success) {
 			std::cout << reader.getFormattedErrorMessages() << std::endl;
 		}
@@ -51,7 +45,7 @@ namespace EntityParser {
 			for (std::size_t i = 0; i < entityNames.size(); ++i) {
 				Json::Value typeRoot = root.get(entityNames[i], "");
 				if (typeRoot.isObject()) {
-					prototypes.push_back(CreatePrototype(typeRoot));
+					prototypes.push_back(CreatePrototype<TSettings>(entityNames[i], typeRoot));
 				}
 			}
 		}

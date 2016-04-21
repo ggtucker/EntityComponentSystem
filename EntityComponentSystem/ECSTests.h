@@ -5,14 +5,47 @@
 #include "Reflection.h"
 #include "ECSSettings.h"
 #include "TEntitySystem.h"
+#include "EntityParser.h"
 
-namespace Tests {
+namespace ECSTests {
 
-	struct C0 {};
-	struct C1 {};
-	struct C2 {};
-	struct C3 {};
-	using MyComponentList = Refl::TypeList<C0, C1, C2, C3, PositionComponent>;
+	struct PositionComponent : public Component {
+		float x;
+		float y;
+		float z;
+
+		std::string Name() const { return "positionComponent"; }
+		void Serialize(Json::Value& root) const {};
+		void Deserialize(const Json::Value& root) {
+			x = root.get("x", "-1").asFloat();
+			y = root.get("y", "-1").asFloat();
+			z = root.get("z", "-1").asFloat();
+		};
+	};
+
+	struct HealthComponent : public Component {
+		float health;
+		float maxHealth;
+
+		std::string Name() const { return "healthComponent"; }
+		void Serialize(Json::Value& root) const {};
+		void Deserialize(const Json::Value& root) {
+			health = root.get("health", "-1").asFloat();
+			maxHealth = root.get("maxHealth", "-1").asFloat();
+		};
+	};
+
+	struct RenderableComponent : public Component {
+		int meshId;
+
+		std::string Name() const { return "renderableComponent"; }
+		void Serialize(Json::Value& root) const {};
+		void Deserialize(const Json::Value& root) {
+			meshId = root.get("meshId", "-1").asInt();
+		};
+	};
+
+	using MyComponentList = Refl::TypeList<PositionComponent, HealthComponent, RenderableComponent>;
 
 	struct T0 {};
 	struct T1 {};
@@ -20,22 +53,20 @@ namespace Tests {
 	using MyTagList = Refl::TypeList<T0, T1, T2>;
 
 	using S0 = Refl::TypeList<>;
-	using S1 = Refl::TypeList<C0, C1>;
-	using S2 = Refl::TypeList<C0, PositionComponent, T0>;
-	using S3 = Refl::TypeList<C1, T0, C3, T2>;
+	using S1 = Refl::TypeList<PositionComponent, HealthComponent>;
+	using S2 = Refl::TypeList<PositionComponent, RenderableComponent, T0>;
+	using S3 = Refl::TypeList<HealthComponent, T0, RenderableComponent, T2>;
 	using MySignatureList = Refl::TypeList<S0, S1, S2, S3>;
 
 	using MySettings = ECSSettings<MyComponentList, MyTagList, MySignatureList>;
 
-	static_assert(MySettings::ComponentCount == 5, "");
+	static_assert(MySettings::ComponentCount == 3, "");
 	static_assert(MySettings::TagCount == 3, "");
 	static_assert(MySettings::SignatureCount == 4, "");
 
-	static_assert(MySettings::ComponentId<C0>() == 0, "");
-	static_assert(MySettings::ComponentId<C1>() == 1, "");
-	static_assert(MySettings::ComponentId<C2>() == 2, "");
-	static_assert(MySettings::ComponentId<C3>() == 3, "");
-	static_assert(MySettings::ComponentId<PositionComponent>() == 4, "");
+	static_assert(MySettings::ComponentId<PositionComponent>() == 0, "");
+	static_assert(MySettings::ComponentId<HealthComponent>() == 1, "");
+	static_assert(MySettings::ComponentId<RenderableComponent>() == 2, "");
 
 	static_assert(MySettings::TagId<T0>() == 0, "");
 	static_assert(MySettings::TagId<T1>() == 1, "");
@@ -57,7 +88,7 @@ namespace Tests {
 	static_assert(std::is_same
 		<
 		MySignatureBitset::SignatureComponents<S3>,
-		Refl::TypeList<C1, C3>
+		Refl::TypeList<HealthComponent, RenderableComponent>
 		>::value, "");
 
 	static_assert(std::is_same
@@ -75,14 +106,15 @@ namespace Tests {
 		const auto& bS2(msb.GetSignatureBitset<S2>());
 		const auto& bS3(msb.GetSignatureBitset<S3>());
 
-		assert(bS0 == Bitset{ "00000000" });
-		assert(bS1 == Bitset{ "00000011" });
-		assert(bS2 == Bitset{ "00110001" });
-		assert(bS3 == Bitset{ "10101010" });
+		assert(bS0 == Bitset{ "000000" });
+		assert(bS1 == Bitset{ "000011" });
+		assert(bS2 == Bitset{ "001101" });
+		assert(bS3 == Bitset{ "101110" });
 
 		std::cout << "Signature bitset tests passed!" << std::endl;
 
 		using EntitySystem = TEntitySystem<MySettings>;
+		using EntityPrototype = TEntityPrototype<MySettings>;
 
 		EntitySystem entitySystem;
 
@@ -139,8 +171,8 @@ namespace Tests {
 		// Check signature matching
 
 		Entity e5 = entitySystem.CreateEntity();
-		entitySystem.AddComponent(e5, C0());
-		entitySystem.AddComponent(e5, C1());
+		entitySystem.AddComponent(e5, PositionComponent());
+		entitySystem.AddComponent(e5, HealthComponent());
 		entitySystem.AddComponent(e5, p0);
 		entitySystem.Refresh();
 		assert(entitySystem.MatchesSignature<S0>(e5));
@@ -152,9 +184,46 @@ namespace Tests {
 
 		// Entity iteration
 
-		entitySystem.ForEntitiesMatching<S1>([](auto i, auto& c1, auto& c2) {
+		entitySystem.ForEntitiesMatching<S1>([](EntityIndex i, PositionComponent& c1, HealthComponent& c2) {
 			std::cout << "entity " << i << std::endl;
 		});
+
+		// Test entity prototype generation
+
+		EntitySystem system;
+
+		std::string entityData =
+			"{\
+				\"entities\": {\
+					\"cow\": {\
+						\"healthComponent\": {\
+							\"health\": 40,\
+							\"maxHealth\": 50\
+						},\
+						\"positionComponent\": {\
+							\"x\": 5,\
+							\"y\": 10,\
+							\"z\": 15\
+						}\
+					}\
+				}\
+			}";
+		std::istringstream inputStream(entityData, std::istream::binary);
+		std::vector<EntityPrototype> entityTypes = EntityParser::ParseTypes<MySettings>(inputStream);
+
+		for (std::size_t i = 0; i < entityTypes.size(); ++i) {
+			EntityPrototype& type = entityTypes[i];
+
+			Entity e = type.CreateEntity(system);
+			
+			std::cout << type.GetName() << " should have component #0, #1" << std::endl;
+			MyComponentList::ForTypes([&system, &e](auto t) {
+				if (system.HasComponent<TYPE_OF(t)>(e)) {
+					std::cout << "  has component #" << MySettings::ComponentBit<TYPE_OF(t)>() << std::endl;
+				}
+			});
+
+		}
 
 		std::cout << "Runtime tests passed!" << std::endl;
 	}
